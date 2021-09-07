@@ -14,13 +14,14 @@ def download_page(url: str) -> str:
         print(response)
         return None
 
-def download_all_ratings(anime: str, num_pages) -> list:
+def download_all_ratings(anime_id: str, num_pages) -> list:
     """Returns all the html pages of user ratings from the given anime"""
     user_page = 0
     pages = []
     print("Successfully loaded pages: : ", end = "")
     for x in range(num_pages):  # first 99 pages of reviews
-        url = f"https://myanimelist.net/anime/16498/{anime}/stats?m=all&show={user_page}.html"
+        url = f"https://myanimelist.net/anime/{anime_id}/anime_title/stats?m=all&show" \
+              f"={user_page}.html"
         page = download_page(url)
         if page == None:  # response is not ok so break loop
             break
@@ -28,7 +29,7 @@ def download_all_ratings(anime: str, num_pages) -> list:
             pages.append(page)
             print(f"{x+1},", end="")
 
-        delay = random.randint(1, 3)
+        #delay = random.randint(1, 3)
         #time.sleep(delay)  # wait before requesting again
 
         user_page += 75

@@ -8,8 +8,9 @@ import MALScraper
 import bs4
 import os
 
+
 class MALBuddy:
-    def __init__(self, client_info_fp,token_filepath=None):
+    def __init__(self, client_info_fp, token_filepath=None):
         self.token = MALToken(client_info_fp, token_filepath)
 
     def get_anime_list(self, user: str, limit=500) -> pd.DataFrame:
@@ -20,13 +21,15 @@ class MALBuddy:
         """
         url = f"https://api.myanimelist.net/v2/users/{user}/animelist?fields=list_status&limit={limit}"
 
-        resp = requests.get(url, headers={"Authorization": f"Bearer {self.token.get_access_token()}"})
+        resp = requests.get(url, headers={
+            "Authorization": f"Bearer {self.token.get_access_token()}"})
 
         if (resp.ok):
             mal = resp.json()['data']
         else:
             token.refresh_token()
-            resp = requests.get(url, headers={"Authorization": f"Bearer {self.token.get_access_token()}"})
+            resp = requests.get(url, headers={
+                "Authorization": f"Bearer {self.token.get_access_token()}"})
             if (not resp.ok):
                 print("Error requesting anime list. Aborting...")
                 return
@@ -43,13 +46,13 @@ class MALBuddy:
     def get_token(self) -> MALToken:
         return self.token.get_token()
 
-    def generate_ratings(self, anime: str, num_pages=99) -> pd.DataFrame:
+    def generate_ratings(self, anime_id: str, num_pages=99) -> dict:
         """Webscrapes latest 99 pages of ratings from MAL for the given anime"""
         if num_pages > 99:
             print("Cannot scrape more than 99 pages!")
             return
-        
-        pages = MALScraper.download_all_ratings(anime, num_pages)
+
+        pages = MALScraper.download_all_ratings(anime_id, num_pages)
         user_list = []
         rating_list = []
         for page in pages:
@@ -60,32 +63,39 @@ class MALBuddy:
             rating_list += MALScraper.parse_ratings(soup)
 
         user_ratings = pd.DataFrame({"user": user_list, 'rating': rating_list})
-        user_ratings = user_ratings.drop_duplicates(subset=['user'], keep='first')  # drop duplicates, keep most recent
+        user_ratings = user_ratings.drop_duplicates(subset=['user'],
+                                                    keep='first')  # drop duplicates, keep most recent
         user_ratings = user_ratings[user_ratings['rating'] != '-']
         user_ratings = user_ratings.astype({'rating': 'int32'})
         user_ratings = user_ratings.reset_index(drop=True)
 
-        return user_ratings
+        return user_ratings.to_dict()
 
-
-    def generate_and_write_ratings(self, anime: str, fp=None, folder='anime_ratings', num_pages=99) -> pd.DataFrame:
-        """Webscrapes latest 99 pages of rating from MAL and then writes the data to a
+    def generate_and_write_ratings(self, title: str, anime_id: str, fp=None,
+                                   folder='anime_ratings',
+                                   num_pages=99) -> dict:
+        """Web scrapes latest 99 pages of rating from MAL and then writes the data to a
         json file"""
-        if os.path.exists(folder):
-            save_folder = f'/{folder}'
-        else:
+        if not os.path.exists(folder):
             print(f"Error, folder {folder} not found!")
-            return
-        
+            return {}
 
-        ratings = self.generate_ratings(anime,num_pages=num_pages)
-        if fp is None:
-            fp = os.path.join(folder, f'{anime}.json')
+        rating_df = pd.DataFrame(self.generate_ratings(anime_id, num_pages=num_pages))
+
+        if fp is None:  # create filepath to write json
+            fp = os.path.join(folder, f'{title}.json')
+
+        if os.path.exists(fp):  # load ratings that have been previously scraped
+            with open(fp, 'r') as file:
+                existing_ratings = json.load(file)
+
+            rating_df = pd.concat([rating_df, pd.DataFrame(existing_ratings)])
+            rating_df = rating_df.drop_duplicates(subset=['user'], keep='first')
+
         with open(fp, 'w') as file:
-            json.dump(ratings.to_dict(), file)
+            json.dump(rating_df.to_dict(), file)
         file.close()
         print(f"\nRatings saved to {fp} ")
-        return ratings
 
     def load_ratings(self, anime: str, folder='anime_ratings') -> pd.DataFrame:
         if os.path.exists(folder):
@@ -96,13 +106,8 @@ class MALBuddy:
 
         fp = os.path.join(save_folder, f'{anime}.json')
         print(fp)
-        
+
         with open(fp, 'r') as file:
             ratings = json.load(file)
         file.close()
         return pd.DataFrame(ratings)
-
-
-
-
-

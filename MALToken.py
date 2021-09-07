@@ -16,7 +16,7 @@ class MALToken:
             self.client_secret = client_info['CLIENT_SECRET']
 
         if self.token_filepath is not None:
-            self.refresh_token(token_filepath, client_id, client_secret)
+            self.refresh_token(token_filepath)
 
     def get_token(self) -> dict:
         return self.token
@@ -24,14 +24,14 @@ class MALToken:
     def get_access_token(self) -> str:
         return self.token['access_token']
 
-    def refresh_token(self, token_filepath: str, client_id: str, client_secret: str):
+    def refresh_token(self, token_filepath: str):
         """Refreshes the given token"""
         with open(token_filepath, 'r') as file:
             token = json.load(file)
         url = "https://myanimelist.net/v1/oauth2/token"
         data = {
-            'client_id': client_id,
-            'client_secret': client_secret,
+            'client_id': self.client_id,
+            'client_secret':self.client_secret,
             'grant_type': "refresh_token",
             'refresh_token': token['refresh_token']
         }
