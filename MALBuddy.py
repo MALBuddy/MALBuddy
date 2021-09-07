@@ -88,14 +88,15 @@ class MALBuddy:
         if os.path.exists(fp):  # load ratings that have been previously scraped
             with open(fp, 'r') as file:
                 existing_ratings = json.load(file)
-
+                file.close()
             rating_df = pd.concat([rating_df, pd.DataFrame(existing_ratings)])
-            rating_df = rating_df.drop_duplicates(subset=['user'], keep='first')
-
+            rating_df = rating_df.drop_duplicates(subset=['user'], keep='first').reset_index()
+        
         with open(fp, 'w') as file:
             json.dump(rating_df.to_dict(), file)
         file.close()
         print(f"\nRatings saved to {fp} ")
+        return rating_df
 
     def load_ratings(self, anime: str, folder='anime_ratings') -> pd.DataFrame:
         if os.path.exists(folder):
