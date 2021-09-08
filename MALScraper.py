@@ -27,10 +27,10 @@ def download_all_ratings(anime_id: str, num_pages) -> list:
             break
         else:
             pages.append(page)
-            print(f"{x+1},", end="")
+            print(f"{x+1}, ", end="")
 
-        #delay = random.randint(1, 3)
-        #time.sleep(delay)  # wait before requesting again
+        delay = random.randint(1, 3)
+        time.sleep(delay)  # wait before requesting again
 
         user_page += 75
     return pages

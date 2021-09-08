@@ -71,26 +71,28 @@ class MALBuddy:
 
         return user_ratings.to_dict()
 
-    def generate_and_write_ratings(self, title: str, anime_id: str, fp=None,
+    def generate_and_write_ratings(self, id: str, title: str, fp=None,
                                    folder='anime_ratings',
                                    num_pages=99) -> dict:
         """Web scrapes latest 99 pages of rating from MAL and then writes the data to a
         json file"""
+
         if not os.path.exists(folder):
             print(f"Error, folder {folder} not found!")
             return {}
 
-        rating_df = pd.DataFrame(self.generate_ratings(anime_id, num_pages=num_pages))
+        print(f"Downloading ratings for: {title}")
+        rating_df = pd.DataFrame(self.generate_ratings(id, num_pages=num_pages))
 
         if fp is None:  # create filepath to write json
-            fp = os.path.join(folder, f'{title}.json')
+            fp = os.path.join(folder, f'{self.format_title(title)}.json')
 
         if os.path.exists(fp):  # load ratings that have been previously scraped
             with open(fp, 'r') as file:
                 existing_ratings = json.load(file)
                 file.close()
             rating_df = pd.concat([rating_df, pd.DataFrame(existing_ratings)])
-            rating_df = rating_df.drop_duplicates(subset=['user'], keep='first').reset_index()
+            rating_df = rating_df.drop_duplicates(subset=['user'], keep='first').reset_index(drop=True)
         
         with open(fp, 'w') as file:
             json.dump(rating_df.to_dict(), file)
@@ -105,10 +107,16 @@ class MALBuddy:
             print(f"Error, folder {folder} not found!")
             return
 
-        fp = os.path.join(save_folder, f'{anime}.json')
+        fp = os.path.join(save_folder, f'{self.format_title(anime)}.json')
         print(fp)
 
         with open(fp, 'r') as file:
             ratings = json.load(file)
         file.close()
         return pd.DataFrame(ratings)
+
+    def format_title(self, title: str) -> str:
+        """removes any non-word symbols and replaces any spaces with underscores """
+        title = re.sub(' ', '_', title.lower())
+        title = re.sub('\W', '', title)
+        return title
