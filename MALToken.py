@@ -24,9 +24,9 @@ class MALToken:
     def get_access_token(self) -> str:
         return self.token['access_token']
 
-    def refresh_token(self, token_filepath: str):
+    def refresh_token(self, token_fp="token.json"):
         """Refreshes the given token"""
-        with open(token_filepath, 'r') as file:
+        with open(token_fp, 'r') as file:
             token = json.load(file)
         url = "https://myanimelist.net/v1/oauth2/token"
         data = {
