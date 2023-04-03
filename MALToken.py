@@ -4,7 +4,7 @@ import secrets
 
 
 class MALToken:
-    """Represents a user token for interacting with the MAL api"""
+    """Represents  a user token for interacting with the MAL api"""
 
     def __init__(self, client_info_fp, token_filepath=None):
         self.token = None
@@ -61,14 +61,14 @@ class MALToken:
 
         def print_auth_link(code_verifier: str):
             """print link for user to get authorization code"""
-            url = f'https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id={CLIENT_ID}&code_challenge={code_verifier}'
+            url = f'https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id={self.client_id}&code_challenge={code_verifier}'
             print(f"Authorize Here : {url}\n")
 
         def request_user_token(auth_code: str, code_verifier: str) -> dict:
             """makes the request to MAL for the token"""
             url = 'https://myanimelist.net/v1/oauth2/token'
-            data = {"client_id": CLIENT_ID,
-                    "client_secret": CLIENT_SECRET,
+            data = {"client_id": self.client_id,
+                    "client_secret": self.client_secret,
                     "code": auth_code,
                     "code_verifier": code_verifier,
                     "grant_type": "authorization_code"
@@ -100,7 +100,7 @@ class MALToken:
         code_verifier = get_new_code_verifier()
         print_auth_link(code_verifier)
 
-        authorisation_code = input('Copy-paste the Authorisation Code: ').strip()
+        authorisation_code = input("You must first authenticate your MyAnimeList account in order to to make requests on behalf of the account. Please login to this link and copy-paste the Authorisation Code and the end of the url.  (eg http://localhost/oauth?code={YOUR AUTHORIZATION CODE}: ").strip()
         self.token = request_user_token(authorisation_code, code_verifier)
 
-        print_user_info(token['access_token'])
+        print_user_info(self.token['access_token'])
